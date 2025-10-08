@@ -6,6 +6,8 @@ import { ChatThread } from "@/components/ChatThread";
 import { Button } from "@/components/ui/button";
 import { Plus, LogIn, LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -21,6 +23,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Load messages from localStorage on mount (for non-authenticated users)
   useEffect(() => {
@@ -57,6 +60,57 @@ const Index = () => {
       localStorage.removeItem('chat_messages');
     } catch (error) {
       console.error('Failed to sign out:', error);
+    }
+  };
+
+  const loadConversation = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('history')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        // Parse and load messages
+        const userMessage: Message = {
+          id: `${id}-user`,
+          role: 'user',
+          content: data.prompt,
+          timestamp: new Date(data.created_at).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        };
+
+        const aiMessage: Message = {
+          id: `${id}-ai`,
+          role: 'assistant',
+          content: 'Here\'s the code:',
+          timestamp: new Date(data.created_at).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          codeBlocks: [data.response],
+        };
+
+        setMessages([userMessage, aiMessage]);
+        toast({
+          title: 'Conversation loaded',
+          description: 'Previous conversation has been loaded',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load conversation',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -126,6 +180,7 @@ const Index = () => {
       <Sidebar
         isCollapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onLoadConversation={loadConversation}
       />
 
       {/* Main Content Area */}
