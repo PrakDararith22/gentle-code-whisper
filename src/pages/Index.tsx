@@ -69,23 +69,21 @@ const Index = () => {
       setCurrentConversationId(conversationId);
     }
 
-    // Get the first prompt for the title
-    const firstPrompt = messages.length > 0 ? messages[0].content : prompt;
+    // Get the first prompt for the title (from the very first message in the conversation)
+    const firstPrompt = messages.length > 0 && messages[0].role === 'user' 
+      ? messages[0].content 
+      : prompt;
 
+    // Build the complete message history including the latest exchange
+    const allMessages = [...messages];
+    
     const historyItem = {
       id: conversationId,
-      prompt: firstPrompt, // Use first prompt as title
-      messages: [...messages, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant' as const,
-        content: 'Here\'s the code:',
-        timestamp: new Date().toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        codeBlocks: [response],
-      }],
-      created_at: new Date().toISOString(),
+      prompt: firstPrompt, // Title shown in sidebar
+      messages: allMessages, // All messages in this conversation
+      created_at: conversationId === currentConversationId 
+        ? (messages.length > 0 ? messages[0].timestamp : new Date().toISOString())
+        : new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
