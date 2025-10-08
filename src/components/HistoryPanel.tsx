@@ -86,9 +86,6 @@ export function HistoryPanel({ onLoadConversation }: { onLoadConversation: (id: 
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm truncate">{conv.prompt}</p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(conv.created_at).toLocaleDateString()}
-                </p>
               </div>
               
               <Button
