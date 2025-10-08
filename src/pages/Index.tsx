@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { PromptInput } from "@/components/PromptInput";
 import { ChatThread } from "@/components/ChatThread";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, LogIn, LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   id: string;
@@ -17,9 +19,45 @@ const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  // Load messages from localStorage on mount (for non-authenticated users)
+  useEffect(() => {
+    if (!user) {
+      const savedMessages = localStorage.getItem('chat_messages');
+      if (savedMessages) {
+        try {
+          setMessages(JSON.parse(savedMessages));
+        } catch (error) {
+          console.error('Failed to load messages from localStorage:', error);
+        }
+      }
+    }
+  }, [user]);
+
+  // Save messages to localStorage when they change (for non-authenticated users)
+  useEffect(() => {
+    if (!user && messages.length > 0) {
+      localStorage.setItem('chat_messages', JSON.stringify(messages));
+    }
+  }, [messages, user]);
 
   const startNewChat = () => {
     setMessages([]);
+    if (!user) {
+      localStorage.removeItem('chat_messages');
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setMessages([]);
+      localStorage.removeItem('chat_messages');
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    }
   };
 
   const handlePromptSubmit = async (prompt: string) => {
@@ -105,6 +143,23 @@ const Index = () => {
               <Plus className="h-4 w-4 mr-2" />
               New Chat
             </Button>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <User className="h-3 w-3" />
+                  {user.email}
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <Button variant="default" size="sm" onClick={() => navigate('/login')}>
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
+              </Button>
+            )}
           </div>
         </header>
 
