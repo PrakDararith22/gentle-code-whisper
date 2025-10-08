@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Paperclip, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,7 @@ export function PromptInput({ onSubmit }: PromptInputProps) {
   const [prompt, setPrompt] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,6 +67,25 @@ export function PromptInput({ onSubmit }: PromptInputProps) {
     }
   };
 
+  // Auto-resize the textarea up to 2 lines, then enable scrolling
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const lineHeight = 20; // px, matches leading-5
+    const maxLines = 2;
+    const verticalPadding = 20; // px, matches py-2.5 (10px top + 10px bottom)
+    const maxHeight = lineHeight * maxLines + verticalPadding; // ~60px
+
+    el.style.height = "auto";
+    // compute how many lines the content needs (approx)
+    const contentHeight = el.scrollHeight - verticalPadding;
+    const lines = Math.max(1, Math.ceil(contentHeight / lineHeight));
+    const baseHeight = lineHeight + verticalPadding; // 40px -> aligns with 40px icon buttons
+    const target = lines <= 1 ? baseHeight : Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${target}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [prompt]);
+
   return (
     <div
       className={
@@ -77,7 +97,7 @@ export function PromptInput({ onSubmit }: PromptInputProps) {
         ].join(" ")
       }
     >
-      <div className="w-full bg-prompt-bg rounded-xl md:rounded-2xl shadow-lg border border-border p-3 md:p-4 pb-[env(safe-area-inset-bottom)] md:pb-4">
+      <div className="w-full bg-prompt-bg rounded-xl md:rounded-2xl shadow-lg border border-border p-3 md:p-4 pb-[calc(env(safe-area-inset-bottom)+12px)] md:pb-4">
         {/* File Previews */}
         {files.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
@@ -100,7 +120,7 @@ export function PromptInput({ onSubmit }: PromptInputProps) {
           </div>
         )}
 
-        <div className="flex gap-3 items-end">
+        <div className="flex gap-3 items-center">
           <input
             ref={fileInputRef}
             type="file"
@@ -121,11 +141,13 @@ export function PromptInput({ onSubmit }: PromptInputProps) {
           </Button>
 
           <Textarea
+            ref={textareaRef}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Describe the code you want to generate..."
-            className="flex-1 min-w-0 min-h-[48px] md:min-h-[60px] max-h-[200px] resize-none border-0 focus-visible:ring-0 bg-transparent"
+            rows={1}
+            className="flex-1 min-w-0 min-h-0 resize-none border-0 rounded-none bg-transparent px-0 focus-visible:ring-0 leading-5 py-2.5 placeholder:text-muted-foreground"
           />
 
           <Button
