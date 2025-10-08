@@ -16,19 +16,54 @@ const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [snippets, setSnippets] = useState<Snippet[]>([]);
 
-  const handlePromptSubmit = (prompt: string) => {
-    // Mock code generation for demo
-    const newSnippet: Snippet = {
-      id: Date.now().toString(),
-      code: `// Generated from prompt: "${prompt}"\n\nfunction example() {\n  console.log("This is a demo snippet");\n  return "Hello from Vibe!";\n}`,
-      language: "JavaScript",
-      timestamp: new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
+  const handlePromptSubmit = async (prompt: string) => {
+    try {
+      // Call backend edge function for code generation
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ prompt }),
+        }
+      );
 
-    setSnippets((prev) => [newSnippet, ...prev]);
+      if (!response.ok) {
+        throw new Error("Failed to generate code");
+      }
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        const newSnippet: Snippet = {
+          id: Date.now().toString(),
+          code: data.code,
+          language: "JavaScript",
+          timestamp: new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
+
+        setSnippets((prev) => [newSnippet, ...prev]);
+      }
+    } catch (error) {
+      console.error("Error generating code:", error);
+      // Fallback to show error message
+      const errorSnippet: Snippet = {
+        id: Date.now().toString(),
+        code: `// Error: Unable to generate code\n// ${error instanceof Error ? error.message : "Unknown error"}`,
+        language: "JavaScript",
+        timestamp: new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      setSnippets((prev) => [errorSnippet, ...prev]);
+    }
   };
 
   return (
