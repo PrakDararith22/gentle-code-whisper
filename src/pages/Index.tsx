@@ -61,26 +61,57 @@ const Index = () => {
 
 
   const saveToHistory = async (prompt: string, response: string) => {
-    // Only save if this is the first message in a new conversation
-    if (currentConversationId) return;
+    let conversationId = currentConversationId;
+    
+    // Create new conversation ID if this is the first message
+    if (!conversationId) {
+      conversationId = Date.now().toString();
+      setCurrentConversationId(conversationId);
+    }
 
-    const conversationId = Date.now().toString();
-    setCurrentConversationId(conversationId);
+    // Get the first prompt for the title
+    const firstPrompt = messages.length > 0 ? messages[0].content : prompt;
 
     const historyItem = {
       id: conversationId,
-      prompt,
-      response,
+      prompt: firstPrompt, // Use first prompt as title
+      messages: [...messages, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant' as const,
+        content: 'Here\'s the code:',
+        timestamp: new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        codeBlocks: [response],
+      }],
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     if (user) {
-      // Save to database for signed-in users
-      await supabase.from('history').insert({
-        user_id: user.id,
-        prompt,
-        response,
-      });
+      // Save/update to database for signed-in users
+      const { data: existing } = await supabase
+        .from('history')
+        .select('id')
+        .eq('id', conversationId)
+        .single();
+
+      if (existing) {
+        // Update existing conversation
+        await supabase.from('history').update({
+          response,
+          updated_at: new Date().toISOString(),
+        }).eq('id', conversationId);
+      } else {
+        // Create new conversation
+        await supabase.from('history').insert({
+          id: conversationId,
+          user_id: user.id,
+          prompt: firstPrompt,
+          response,
+        });
+      }
     } else {
       // Save to localStorage for anonymous users
       const localHistory = localStorage.getItem('chat_history');
@@ -92,7 +123,13 @@ const Index = () => {
           console.error('Failed to parse local history:', error);
         }
       }
+      
+      // Remove old version if exists
+      history = history.filter((item: any) => item.id !== conversationId);
+      
+      // Add updated conversation at the beginning
       history.unshift(historyItem);
+      
       // Keep only last 50 conversations
       if (history.length > 50) {
         history = history.slice(0, 50);
@@ -125,29 +162,35 @@ const Index = () => {
       }
 
       if (data) {
-        // Parse and load messages
-        const userMessage: Message = {
-          id: `${id}-user`,
-          role: 'user',
-          content: data.prompt,
-          timestamp: new Date(data.created_at).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-        };
+        // Load all messages if available (for localStorage)
+        if (data.messages && Array.isArray(data.messages)) {
+          setMessages(data.messages);
+        } else {
+          // Fallback for database (only has first prompt and last response)
+          const userMessage: Message = {
+            id: `${id}-user`,
+            role: 'user',
+            content: data.prompt,
+            timestamp: new Date(data.created_at).toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+          };
 
-        const aiMessage: Message = {
-          id: `${id}-ai`,
-          role: 'assistant',
-          content: 'Here\'s the code:',
-          timestamp: new Date(data.created_at).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-          codeBlocks: [data.response],
-        };
+          const aiMessage: Message = {
+            id: `${id}-ai`,
+            role: 'assistant',
+            content: 'Here\'s the code:',
+            timestamp: new Date(data.created_at).toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            codeBlocks: [data.response],
+          };
 
-        setMessages([userMessage, aiMessage]);
+          setMessages([userMessage, aiMessage]);
+        }
+        
         setCurrentConversationId(id);
         toast({
           title: 'Conversation loaded',
