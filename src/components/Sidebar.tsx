@@ -18,9 +18,10 @@ interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
   onLoadConversation?: (id: string) => void;
+  refreshTrigger?: number;
 }
 
-export function Sidebar({ isCollapsed, onToggle, onLoadConversation }: SidebarProps) {
+export function Sidebar({ isCollapsed, onToggle, onLoadConversation, refreshTrigger }: SidebarProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -99,7 +100,10 @@ export function Sidebar({ isCollapsed, onToggle, onLoadConversation }: SidebarPr
         {!isCollapsed && (
           <>
             <Separator className="my-4" />
-            <HistoryPanel onLoadConversation={onLoadConversation || (() => {})} />
+            <HistoryPanel 
+              onLoadConversation={onLoadConversation || (() => {})} 
+              refreshTrigger={refreshTrigger}
+            />
           </>
         )}
       </ScrollArea>

@@ -22,6 +22,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -54,10 +55,39 @@ const Index = () => {
 
   const startNewChat = () => {
     setMessages([]);
-    setCurrentConversationId(null);
+    
+    // Create new conversation ID immediately
+    const newConversationId = Date.now().toString();
+    setCurrentConversationId(newConversationId);
+    
+    // Create placeholder in history (will be saved when first message is sent)
+    const placeholder = {
+      id: newConversationId,
+      prompt: 'New Chat',
+      messages: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
     if (!user) {
+      // Add placeholder to localStorage
+      const localHistory = localStorage.getItem('chat_history');
+      let history = [];
+      if (localHistory) {
+        try {
+          history = JSON.parse(localHistory);
+        } catch (error) {
+          console.error('Failed to parse local history:', error);
+        }
+      }
+      history.unshift(placeholder);
+      localStorage.setItem('chat_history', JSON.stringify(history));
       localStorage.removeItem('chat_messages');
     }
+    
+    // Trigger history panel refresh
+    setRefreshTrigger(prev => prev + 1);
+    
     toast({
       title: 'New chat started',
       description: 'Start a fresh conversation',
@@ -298,6 +328,7 @@ const Index = () => {
         isCollapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         onLoadConversation={loadConversation}
+        refreshTrigger={refreshTrigger}
       />
 
       {/* Main Content Area */}

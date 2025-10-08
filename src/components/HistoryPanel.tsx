@@ -11,14 +11,19 @@ interface Conversation {
   created_at: string;
 }
 
-export function HistoryPanel({ onLoadConversation }: { onLoadConversation: (id: string) => void }) {
+interface HistoryPanelProps {
+  onLoadConversation: (id: string) => void;
+  refreshTrigger?: number;
+}
+
+export function HistoryPanel({ onLoadConversation, refreshTrigger }: HistoryPanelProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
     loadHistory();
-  }, [user]);
+  }, [user, refreshTrigger]);
 
   const loadHistory = async () => {
     setConversations([]); // Clear first
