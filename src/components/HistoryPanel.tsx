@@ -21,38 +21,52 @@ export function HistoryPanel({ onLoadConversation }: { onLoadConversation: (id: 
   }, [user]);
 
   const loadHistory = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    
-    const { data, error } = await supabase
-      .from('history')
-      .select('id, prompt, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    if (user) {
+      // Load from database for signed-in users
+      const { data, error } = await supabase
+        .from('history')
+        .select('id, prompt, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-    if (!error && data) {
-      setConversations(data);
+      if (!error && data) {
+        setConversations(data);
+      }
+    } else {
+      // Load from localStorage for anonymous users
+      const localHistory = localStorage.getItem('chat_history');
+      if (localHistory) {
+        try {
+          const parsed = JSON.parse(localHistory);
+          setConversations(parsed);
+        } catch (error) {
+          console.error('Failed to parse local history:', error);
+        }
+      }
     }
     setLoading(false);
   };
 
   const deleteConversation = async (id: string) => {
-    await supabase.from('history').delete().eq('id', id);
+    if (user) {
+      // Delete from database
+      await supabase.from('history').delete().eq('id', id);
+    } else {
+      // Delete from localStorage
+      const localHistory = localStorage.getItem('chat_history');
+      if (localHistory) {
+        try {
+          const parsed = JSON.parse(localHistory);
+          const updated = parsed.filter((c: Conversation) => c.id !== id);
+          localStorage.setItem('chat_history', JSON.stringify(updated));
+        } catch (error) {
+          console.error('Failed to delete from local history:', error);
+        }
+      }
+    }
     setConversations(prev => prev.filter(c => c.id !== id));
   };
-
-  if (!user) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-xs text-muted-foreground">
-          Sign in to save and access your chat history
-        </p>
-      </div>
-    );
-  }
 
   if (loading) return <div className="p-4">Loading...</div>;
 

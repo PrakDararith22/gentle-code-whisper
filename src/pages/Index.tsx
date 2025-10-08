@@ -21,7 +21,8 @@ const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { user, signOut } = useAuth();
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,23 +49,80 @@ const Index = () => {
 
   const startNewChat = () => {
     setMessages([]);
+    setCurrentConversationId(null);
     if (!user) {
       localStorage.removeItem('chat_messages');
     }
+    toast({
+      title: 'New chat started',
+      description: 'Start a fresh conversation',
+    });
   };
 
 
-  const loadConversation = async (id: string) => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('history')
-        .select('*')
-        .eq('id', id)
-        .single();
+  const saveToHistory = async (prompt: string, response: string) => {
+    // Only save if this is the first message in a new conversation
+    if (currentConversationId) return;
 
-      if (error) throw error;
+    const conversationId = Date.now().toString();
+    setCurrentConversationId(conversationId);
+
+    const historyItem = {
+      id: conversationId,
+      prompt,
+      response,
+      created_at: new Date().toISOString(),
+    };
+
+    if (user) {
+      // Save to database for signed-in users
+      await supabase.from('history').insert({
+        user_id: user.id,
+        prompt,
+        response,
+      });
+    } else {
+      // Save to localStorage for anonymous users
+      const localHistory = localStorage.getItem('chat_history');
+      let history = [];
+      if (localHistory) {
+        try {
+          history = JSON.parse(localHistory);
+        } catch (error) {
+          console.error('Failed to parse local history:', error);
+        }
+      }
+      history.unshift(historyItem);
+      // Keep only last 50 conversations
+      if (history.length > 50) {
+        history = history.slice(0, 50);
+      }
+      localStorage.setItem('chat_history', JSON.stringify(history));
+    }
+  };
+
+  const loadConversation = async (id: string) => {
+    try {
+      let data = null;
+
+      if (user) {
+        // Load from database
+        const result = await supabase
+          .from('history')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (result.error) throw result.error;
+        data = result.data;
+      } else {
+        // Load from localStorage
+        const localHistory = localStorage.getItem('chat_history');
+        if (localHistory) {
+          const history = JSON.parse(localHistory);
+          data = history.find((item: any) => item.id === id);
+        }
+      }
 
       if (data) {
         // Parse and load messages
@@ -90,6 +148,7 @@ const Index = () => {
         };
 
         setMessages([userMessage, aiMessage]);
+        setCurrentConversationId(id);
         toast({
           title: 'Conversation loaded',
           description: 'Previous conversation has been loaded',
@@ -163,6 +222,9 @@ const Index = () => {
           codeBlocks: [data.code],
         };
         setMessages(prev => [...prev, aiMessage]);
+        
+        // Save to history
+        await saveToHistory(prompt, data.code);
       }
     } catch (error) {
       console.error('Error:', error);
