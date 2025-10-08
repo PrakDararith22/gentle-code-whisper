@@ -2,13 +2,15 @@ import { Code2, FileCode, Sparkles, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { HistoryPanel } from "@/components/HistoryPanel";
 
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
+  onLoadConversation?: (id: string) => void;
 }
 
-export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
+export function Sidebar({ isCollapsed, onToggle, onLoadConversation }: SidebarProps) {
   return (
     <aside
       className={`
@@ -62,14 +64,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         {!isCollapsed && (
           <>
             <Separator className="my-4" />
-            <div className="px-2">
-              <p className="text-xs text-muted-foreground mb-2">Recent</p>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p className="text-xs py-1.5 px-2 rounded hover:bg-sidebar-accent cursor-pointer transition-colors">
-                  No snippets yet
-                </p>
-              </div>
-            </div>
+            <HistoryPanel onLoadConversation={onLoadConversation || (() => {})} />
           </>
         )}
       </ScrollArea>
