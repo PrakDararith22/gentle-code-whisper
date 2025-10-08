@@ -114,7 +114,7 @@ const Index = () => {
     }
   };
 
-  const handlePromptSubmit = async (prompt: string) => {
+  const handlePromptSubmit = async (prompt: string, files?: File[]) => {
     // Add user message immediately
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -130,6 +130,19 @@ const Index = () => {
     setIsLoading(true);
     
     try {
+      // Convert first image file to base64 if present
+      let imageBase64 = null;
+      if (files && files.length > 0) {
+        const imageFile = files.find(f => f.type.startsWith('image/'));
+        if (imageFile) {
+          imageBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(imageFile);
+          });
+        }
+      }
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate`,
         {
@@ -138,7 +151,10 @@ const Index = () => {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ 
+            prompt,
+            image: imageBase64 
+          }),
         }
       );
 
