@@ -21,8 +21,10 @@ export function HistoryPanel({ onLoadConversation }: { onLoadConversation: (id: 
   }, [user]);
 
   const loadHistory = async () => {
+    setConversations([]); // Clear first
+    
     if (user) {
-      // Load from database for signed-in users
+      // Load ONLY from database for signed-in users
       const { data, error } = await supabase
         .from('history')
         .select('id, prompt, created_at')
@@ -34,12 +36,16 @@ export function HistoryPanel({ onLoadConversation }: { onLoadConversation: (id: 
         setConversations(data);
       }
     } else {
-      // Load from localStorage for anonymous users
+      // Load ONLY from localStorage for anonymous users
       const localHistory = localStorage.getItem('chat_history');
       if (localHistory) {
         try {
           const parsed = JSON.parse(localHistory);
-          setConversations(parsed);
+          // Filter out empty conversations
+          const nonEmpty = parsed.filter((item: any) => 
+            item.messages && item.messages.length > 0
+          );
+          setConversations(nonEmpty);
         } catch (error) {
           console.error('Failed to parse local history:', error);
         }

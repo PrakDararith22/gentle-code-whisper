@@ -26,26 +26,31 @@ const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Load messages from localStorage on mount (for non-authenticated users)
+  // Initialize: Clean empty chats and start fresh on mount
   useEffect(() => {
-    if (!user) {
-      const savedMessages = localStorage.getItem('chat_messages');
-      if (savedMessages) {
+    // Clean up empty conversations from localStorage
+    const cleanEmptyChats = () => {
+      const localHistory = localStorage.getItem('chat_history');
+      if (localHistory) {
         try {
-          setMessages(JSON.parse(savedMessages));
+          const history = JSON.parse(localHistory);
+          const nonEmpty = history.filter((item: any) => 
+            item.messages && item.messages.length > 0
+          );
+          localStorage.setItem('chat_history', JSON.stringify(nonEmpty));
         } catch (error) {
-          console.error('Failed to load messages from localStorage:', error);
+          console.error('Failed to clean empty chats:', error);
         }
       }
-    }
-  }, [user]);
+    };
 
-  // Save messages to localStorage when they change (for non-authenticated users)
-  useEffect(() => {
-    if (!user && messages.length > 0) {
-      localStorage.setItem('chat_messages', JSON.stringify(messages));
-    }
-  }, [messages, user]);
+    cleanEmptyChats();
+    
+    // Always start with a fresh new chat
+    setMessages([]);
+    setCurrentConversationId(null);
+    localStorage.removeItem('chat_messages');
+  }, []);
 
   const startNewChat = () => {
     setMessages([]);
