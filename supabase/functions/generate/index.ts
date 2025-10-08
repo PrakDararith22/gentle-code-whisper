@@ -27,8 +27,9 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Supabase automatically provides these env vars in Edge Functions
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPA_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     let imageUrl: string | null = null;
@@ -75,50 +76,66 @@ serve(async (req) => {
       }
     }
 
-    // Call Lovable AI (Gemini) for code generation
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    // Call Google Gemini API for code generation
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY not configured');
     }
 
-    console.log('Calling Lovable AI...');
+    console.log('Calling Google Gemini API...');
 
-    // Build messages array
-    const messages: any[] = [
-      { 
-        role: 'system', 
-        content: 'You are a code assistant. Generate clean, well-structured code based on user prompts. Only return valid code unless the action is "explain". For fix requests, return the corrected code. For explain requests, provide clear explanations.' 
-      }
+    // Build system instruction and user prompt
+    const systemInstruction = 'You are a code assistant. Generate clean, well-structured code based on user prompts. Only return valid code unless the action is "explain". For fix requests, return the corrected code. For explain requests, provide clear explanations.';
+    
+    // Build content parts for Gemini API
+    const parts: any[] = [
+      { text: `${systemInstruction}\n\nUser request: ${prompt}` }
     ];
 
-    // Add user message with optional image
+    // Add image if provided
     if (imageUrl) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: imageUrl } }
-        ]
-      });
-    } else {
-      messages.push({ role: 'user', content: prompt });
+      // Fetch image and convert to base64 for Gemini
+      try {
+        const imageResponse = await fetch(imageUrl);
+        const imageBlob = await imageResponse.arrayBuffer();
+        const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBlob)));
+        
+        parts.push({
+          inline_data: {
+            mime_type: 'image/png',
+            data: base64Image
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching image for Gemini:', error);
+        // Continue without image
+      }
     }
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages,
-      }),
-    });
+    // Use Gemini 2.0 Flash (or gemini-1.5-flash for stability)
+    const model = 'gemini-2.0-flash-exp';
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: parts
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          }
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('Lovable AI error:', aiResponse.status, errorText);
+      console.error('Gemini API error:', aiResponse.status, errorText);
       
       if (aiResponse.status === 429) {
         return new Response(
@@ -127,18 +144,20 @@ serve(async (req) => {
         );
       }
       
-      if (aiResponse.status === 402) {
+      if (aiResponse.status === 403) {
         return new Response(
-          JSON.stringify({ status: 'error', message: 'Payment required. Please add credits to your workspace.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ status: 'error', message: 'Invalid API key or quota exceeded.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      throw new Error(`AI API error: ${aiResponse.status} ${errorText}`);
+      throw new Error(`Gemini API error: ${aiResponse.status} ${errorText}`);
     }
 
     const aiData = await aiResponse.json();
-    const generatedCode = aiData.choices[0].message.content;
+    
+    // Extract generated text from Gemini response format
+    const generatedCode = aiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Error: No response generated';
 
     console.log('Code generated successfully');
 
