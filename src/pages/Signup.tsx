@@ -47,8 +47,8 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md p-8 bg-card rounded-lg shadow-lg">
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="w-full p-6 md:max-w-md md:p-8 md:bg-card md:rounded-lg md:shadow-lg">
         <h1 className="text-2xl font-bold mb-6">Sign Up for Vibe</h1>
         
         <form onSubmit={handleSubmit} className="space-y-4">

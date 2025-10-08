@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,8 +36,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md p-8 bg-card rounded-lg shadow-lg">
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="w-full p-6 md:max-w-md md:p-8 md:bg-card md:rounded-lg md:shadow-lg">
         <h1 className="text-2xl font-bold mb-2">Login to Vibe</h1>
         <p className="text-sm text-muted-foreground mb-6">
           Sign in to save your chat history and access it from anywhere
@@ -71,16 +71,16 @@ export default function Login() {
         
         <p className="mt-4 text-center text-sm">
           Don't have an account?{' '}
-          <a href="/signup" className="text-primary hover:underline">
+          <Link to="/signup" className="text-primary hover:underline">
             Sign up
-          </a>
+          </Link>
         </p>
         
         <p className="mt-2 text-center text-sm text-muted-foreground">
           or{' '}
-          <a href="/" className="text-primary hover:underline">
+          <Link to="/" className="text-primary hover:underline">
             continue without signing in
-          </a>
+          </Link>
         </p>
       </div>
     </div>
