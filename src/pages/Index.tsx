@@ -101,18 +101,20 @@ const Index = () => {
         .single();
 
       if (existing) {
-        // Update existing conversation
+        // Update existing conversation with full message history
         await supabase.from('history').update({
+          messages: allMessages,
           response,
           updated_at: new Date().toISOString(),
         }).eq('id', conversationId);
       } else {
-        // Create new conversation
+        // Create new conversation with full message history
         await supabase.from('history').insert({
           id: conversationId,
           user_id: user.id,
           prompt: firstPrompt,
           response,
+          messages: allMessages,
         });
       }
     } else {
