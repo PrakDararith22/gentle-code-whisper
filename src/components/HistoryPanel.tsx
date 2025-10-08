@@ -84,7 +84,7 @@ export function HistoryPanel({ onLoadConversation, refreshTrigger }: HistoryPane
   return (
     <ScrollArea className="h-full">
       <div className="p-2 space-y-1">
-        <h3 className="text-sm font-medium px-2 mb-2">History</h3>
+        <h3 className="text-sm font-medium px-2 mb-2">Chats</h3>
         
         {conversations.length === 0 ? (
           <p className="text-xs text-muted-foreground px-2">No conversations yet</p>

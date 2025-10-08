@@ -9,8 +9,37 @@ interface ChatMessageProps {
   codeBlocks?: string[];
 }
 
+// Parse code blocks from markdown format
+function parseCodeBlocks(text: string): Array<{ code: string; language: string }> {
+  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+  const blocks: Array<{ code: string; language: string }> = [];
+  let match;
+
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    const language = match[1] || 'text';
+    const code = match[2].trim();
+    if (code) {
+      blocks.push({ code, language });
+    }
+  }
+
+  return blocks;
+}
+
 export function ChatMessage({ role, content, timestamp, codeBlocks }: ChatMessageProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // Parse code blocks from content if they exist
+  const parsedBlocks = parseCodeBlocks(content);
+  const hasCodeInContent = parsedBlocks.length > 0;
+  
+  // Use parsed blocks if available, otherwise use codeBlocks prop
+  const displayBlocks = hasCodeInContent ? parsedBlocks : (codeBlocks || []).map(code => ({ code, language: 'text' }));
+  
+  // Remove code blocks from content for display
+  const textContent = hasCodeInContent 
+    ? content.replace(/```(\w+)?\n[\s\S]*?```/g, '').trim()
+    : content;
 
   const copyToClipboard = async (code: string, index: number) => {
     await navigator.clipboard.writeText(code);
@@ -19,42 +48,46 @@ export function ChatMessage({ role, content, timestamp, codeBlocks }: ChatMessag
   };
 
   return (
-    <div className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-[80%] rounded-lg p-4 ${
+    <div className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-6`}>
+      <div className={`max-w-[85%] rounded-xl p-4 shadow-sm ${
         role === 'user' 
           ? 'bg-primary text-primary-foreground' 
-          : 'bg-muted'
+          : 'bg-card border border-border'
       }`}>
-        <p className="whitespace-pre-wrap">{content}</p>
+        {textContent && <p className="whitespace-pre-wrap text-sm leading-relaxed">{textContent}</p>}
         
-        {codeBlocks?.map((code, i) => (
-          <div key={i} className="mt-3 relative group">
-            {codeBlocks.length > 1 && (
-              <div className="text-xs text-muted-foreground mb-1">
-                Code block {i + 1} of {codeBlocks.length}
-              </div>
-            )}
-            <div className="relative">
-              <pre className="bg-code-bg p-3 rounded overflow-x-auto">
-                <code>{code}</code>
-              </pre>
+        {displayBlocks.map((block, i) => (
+          <div key={i} className="mt-3">
+            <div className="flex items-center justify-between bg-muted/50 px-3 py-1.5 rounded-t-lg border-b border-border">
+              <span className="text-xs font-medium text-muted-foreground uppercase">
+                {block.language}
+              </span>
               <Button
                 variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => copyToClipboard(code, i)}
+                size="sm"
+                className="h-7 px-2 hover:bg-background"
+                onClick={() => copyToClipboard(block.code, i)}
               >
                 {copiedIndex === i ? (
-                  <Check className="h-4 w-4" />
+                  <>
+                    <Check className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Copied!</span>
+                  </>
                 ) : (
-                  <Copy className="h-4 w-4" />
+                  <>
+                    <Copy className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Copy code</span>
+                  </>
                 )}
               </Button>
             </div>
+            <pre className="bg-muted/30 p-4 rounded-b-lg overflow-x-auto border border-t-0 border-border">
+              <code className="text-sm font-mono">{block.code}</code>
+            </pre>
           </div>
         ))}
         
-        <span className="text-xs opacity-70 mt-2 block">{timestamp}</span>
+        <span className="text-xs opacity-60 mt-3 block">{timestamp}</span>
       </div>
     </div>
   );

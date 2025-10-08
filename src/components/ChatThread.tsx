@@ -23,30 +23,25 @@ export function ChatThread({ messages, isLoading }: ChatThreadProps) {
   }, [messages]);
   
   return (
-    <ScrollArea className="flex-1 p-6">
-      {messages.length === 0 ? (
-        <div className="text-center text-muted-foreground mt-20">
-          <p>Start a conversation...</p>
-        </div>
-      ) : (
-        messages.map((msg) => (
-          <ChatMessage key={msg.id} {...msg} />
-        ))
-      )}
-      
-      {isLoading && (
-        <div className="flex justify-start mb-4">
-          <div className="bg-muted rounded-lg p-4">
-            <div className="flex gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-100" />
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-200" />
+    <ScrollArea className="flex-1 px-4 py-6 bg-gradient-to-b from-background to-muted/20">
+      <div className="max-w-5xl mx-auto space-y-2 pb-32">
+        {messages.map((message) => (
+          <ChatMessage key={message.id} {...message} />
+        ))}
+        
+        {isLoading && (
+          <div className="flex justify-start mb-6">
+            <div className="max-w-[85%] rounded-xl p-4 bg-card border border-border shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+                <span className="text-sm text-muted-foreground">Generating response...</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      
-      <div ref={scrollRef} />
+        )}
+        
+        <div ref={scrollRef} />
+      </div>
     </ScrollArea>
   );
 }
