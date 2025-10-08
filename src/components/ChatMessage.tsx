@@ -26,6 +26,41 @@ function parseCodeBlocks(text: string): Array<{ code: string; language: string }
   return blocks;
 }
 
+function prettyLanguage(lang: string): string {
+  const l = (lang || '').toLowerCase();
+  const map: Record<string, string> = {
+    cpp: 'C++',
+    'c++': 'C++',
+    cc: 'C++',
+    c: 'C',
+    ts: 'TypeScript',
+    typescript: 'TypeScript',
+    js: 'JavaScript',
+    javascript: 'JavaScript',
+    jsx: 'JavaScript',
+    tsx: 'TypeScript',
+    py: 'Python',
+    python: 'Python',
+    sh: 'Bash',
+    bash: 'Bash',
+    shell: 'Bash',
+    html: 'HTML',
+    css: 'CSS',
+    json: 'JSON',
+    sql: 'SQL',
+    go: 'Go',
+    rust: 'Rust',
+    rs: 'Rust',
+    java: 'Java',
+    php: 'PHP',
+    ruby: 'Ruby',
+    kt: 'Kotlin',
+    kotlin: 'Kotlin',
+    text: 'Code',
+  };
+  return map[l] || (l ? l.toUpperCase() : 'Code');
+}
+
 export function ChatMessage({ role, content, timestamp, codeBlocks }: ChatMessageProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -33,8 +68,20 @@ export function ChatMessage({ role, content, timestamp, codeBlocks }: ChatMessag
   const parsedBlocks = parseCodeBlocks(content);
   const hasCodeInContent = parsedBlocks.length > 0;
   
-  // Use parsed blocks if available, otherwise use codeBlocks prop
-  const displayBlocks = hasCodeInContent ? parsedBlocks : (codeBlocks || []).map(code => ({ code, language: 'text' }));
+  // If content includes fenced code, use that. Otherwise, try to extract from codeBlocks prop (may include fences).
+  const displayBlocks = hasCodeInContent
+    ? parsedBlocks
+    : (codeBlocks || []).map(raw => {
+        // Try to match fenced format
+        const m = raw.match(/^```(\w+)?\n([\s\S]*?)```\s*$/);
+        if (m) {
+          const lang = m[1] || 'text';
+          const code = m[2].trim();
+          return { code, language: lang };
+        }
+        // Fallback: no fences, treat as plain code
+        return { code: raw, language: 'text' };
+      });
   
   // Remove code blocks from content for display
   const textContent = hasCodeInContent 
@@ -48,19 +95,29 @@ export function ChatMessage({ role, content, timestamp, codeBlocks }: ChatMessag
   };
 
   return (
-    <div className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-6`}>
-      <div className={`max-w-[85%] rounded-xl p-4 shadow-sm ${
+    <div className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-5`}>
+      <div className={`
+        max-w-[92vw]
+        sm:max-w-[78%]
+        md:max-w-[640px]
+        lg:max-w-[720px]
+        xl:max-w-[780px]
+        overflow-hidden rounded-xl p-3 sm:p-4 shadow-sm ${
         role === 'user' 
           ? 'bg-primary text-primary-foreground' 
           : 'bg-card border border-border'
       }`}>
-        {textContent && <p className="whitespace-pre-wrap text-sm leading-relaxed">{textContent}</p>}
+        {(role !== 'assistant' || !hasCodeInContent) && textContent && (
+          <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-xs sm:text-sm leading-relaxed max-h-48 sm:max-h-72 overflow-y-auto">
+            {textContent}
+          </p>
+        )}
         
         {displayBlocks.map((block, i) => (
           <div key={i} className="mt-3">
             <div className="flex items-center justify-between bg-muted/50 px-3 py-1.5 rounded-t-lg border-b border-border">
-              <span className="text-xs font-medium text-muted-foreground uppercase">
-                {block.language}
+              <span className="text-xs font-medium text-muted-foreground">
+                {prettyLanguage(block.language)}
               </span>
               <Button
                 variant="ghost"
@@ -81,8 +138,8 @@ export function ChatMessage({ role, content, timestamp, codeBlocks }: ChatMessag
                 )}
               </Button>
             </div>
-            <pre className="bg-muted/30 p-4 rounded-b-lg overflow-x-auto border border-t-0 border-border">
-              <code className="text-sm font-mono">{block.code}</code>
+            <pre className="bg-muted/30 p-3 sm:p-4 rounded-b-lg overflow-x-auto border border-t-0 border-border max-h-56 sm:max-h-72 overflow-y-auto max-w-full">
+              <code className="block text-[11px] sm:text-xs font-mono whitespace-pre">{block.code}</code>
             </pre>
           </div>
         ))}
