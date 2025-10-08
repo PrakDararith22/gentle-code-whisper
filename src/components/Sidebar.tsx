@@ -15,14 +15,18 @@ import {
 
 interface SidebarProps {
   isCollapsed: boolean;
-  isNewChat: boolean;
   onToggle: () => void;
-  onNewChat: () => void;
   onLoadConversation?: (id: string) => void;
   refreshTrigger?: number;
+  // show temporary new chat item
+  isNewChat?: boolean;
+  onNewChat?: () => void;
+  // styling controls
+  noBorder?: boolean;
+  fullWidth?: boolean;
 }
 
-export function Sidebar({ isCollapsed, isNewChat, onToggle, onNewChat, onLoadConversation, refreshTrigger }: SidebarProps) {
+export function Sidebar({ isCollapsed, onToggle, onLoadConversation, refreshTrigger, isNewChat, onNewChat, noBorder = false, fullWidth = false }: SidebarProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -51,45 +55,47 @@ export function Sidebar({ isCollapsed, isNewChat, onToggle, onNewChat, onLoadCon
   return (
     <aside
       className={`
-        ${isCollapsed ? "w-16" : "w-64"}
+        ${fullWidth ? "w-full" : isCollapsed ? "w-16" : "w-64"}
         transition-all duration-300 ease-in-out
-        bg-sidebar border-r border-sidebar-border
-        flex flex-col
+        bg-sidebar ${noBorder ? "" : "border-r border-sidebar-border"}
+        flex flex-col h-full
       `}
     >
       {/* Header */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border">
+      <div className={`${noBorder ? "h-12" : "h-14"} flex items-center justify-between px-4 ${noBorder ? "" : "border-b border-sidebar-border"}`}>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <Code2 className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-sidebar-foreground">Vibe</span>
+            <Code2 className="h-4 w-4 text-primary" />
+            <span className="font-semibold leading-none text-sidebar-foreground">Vibe</span>
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="h-8 w-8"
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <FileCode className="h-4 w-4" />
-        </Button>
+        {!noBorder && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="h-8 w-8"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <FileCode className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1 px-2 py-4">
+      <ScrollArea className={`flex-1 ${noBorder ? "" : "px-2"} py-4`}>
         {!isCollapsed && (
           <HistoryPanel 
             onLoadConversation={onLoadConversation || (() => {})} 
             refreshTrigger={refreshTrigger}
-            isNewChat={isNewChat}
-            onNewChat={onNewChat}
+            isNewChat={!!isNewChat}
+            onNewChat={onNewChat || (() => {})}
           />
         )}
       </ScrollArea>
 
       {/* Footer - Account Section */}
-      <div className="p-2 border-t border-sidebar-border">
+      <div className={`p-2 ${noBorder ? "" : "border-t border-sidebar-border"}`}>
         {user ? (
           !isCollapsed ? (
             <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-sidebar-accent">

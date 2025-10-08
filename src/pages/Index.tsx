@@ -4,7 +4,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { PromptInput } from "@/components/PromptInput";
 import { ChatThread } from "@/components/ChatThread";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,7 @@ interface Message {
 
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
@@ -323,23 +325,57 @@ const Index = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar
-        isCollapsed={sidebarCollapsed}
-        isNewChat={messages.length === 0}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        onNewChat={startNewChat}
-        onLoadConversation={loadConversation}
-        refreshTrigger={refreshTrigger}
-      />
+      {/* Sidebar (desktop) */}
+      <div className="hidden md:block">
+        <Sidebar
+          isCollapsed={sidebarCollapsed}
+          isNewChat={messages.length === 0}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onNewChat={startNewChat}
+          onLoadConversation={loadConversation}
+          refreshTrigger={refreshTrigger}
+        />
+      </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative">
+      <main className="flex-1 flex flex-col relative pb-24 md:pb-0">
         {/* Top Header */}
         <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <h1 className="text-sm font-medium text-muted-foreground">
-            Chat
-          </h1>
+          <div className="flex items-center gap-3">
+            {/* Mobile hamburger */}
+            <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open navigation">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="p-0 w-72 sm:w-80 pt-4 overflow-hidden border-0 bg-sidebar"
+                aria-label="Navigation drawer"
+              >
+                <div className="h-full">
+                  <Sidebar
+                    isCollapsed={false}
+                    isNewChat={messages.length === 0}
+                    onToggle={() => {}}
+                    noBorder
+                    fullWidth
+                    onNewChat={() => {
+                      startNewChat();
+                      setMobileSidebarOpen(false);
+                    }}
+                    onLoadConversation={(id) => {
+                      loadConversation(id);
+                      setMobileSidebarOpen(false);
+                    }}
+                    refreshTrigger={refreshTrigger}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+            <h1 className="text-sm font-medium text-muted-foreground">Chat</h1>
+          </div>
           <div className="flex items-center gap-4">
             <Button variant="default" size="sm" onClick={startNewChat}>
               <Plus className="h-4 w-4 mr-2" />

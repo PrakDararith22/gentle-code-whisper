@@ -67,8 +67,17 @@ export function PromptInput({ onSubmit }: PromptInputProps) {
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl px-4">
-      <div className="bg-prompt-bg rounded-2xl shadow-lg border border-border p-4">
+    <div
+      className={
+        [
+          // Mobile: full width with a small gap from bottom
+          "z-50 fixed bottom-3 left-0 right-0 px-3 pb-0",
+          // Desktop+: align to content area (parent main is relative)
+          "md:absolute md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-3xl md:px-4 md:pb-0",
+        ].join(" ")
+      }
+    >
+      <div className="w-full bg-prompt-bg rounded-xl md:rounded-2xl shadow-lg border border-border p-3 md:p-4 pb-[env(safe-area-inset-bottom)] md:pb-4">
         {/* File Previews */}
         {files.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
@@ -116,7 +125,7 @@ export function PromptInput({ onSubmit }: PromptInputProps) {
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Describe the code you want to generate..."
-            className="min-h-[60px] max-h-[200px] resize-none border-0 focus-visible:ring-0 bg-transparent"
+            className="flex-1 min-w-0 min-h-[48px] md:min-h-[60px] max-h-[200px] resize-none border-0 focus-visible:ring-0 bg-transparent"
           />
 
           <Button

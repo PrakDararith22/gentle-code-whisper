@@ -24,7 +24,7 @@ export function ChatThread({ messages, isLoading }: ChatThreadProps) {
   
   return (
     <ScrollArea className="flex-1 px-4 py-6 bg-gradient-to-b from-background to-muted/20">
-      <div className="max-w-5xl mx-auto space-y-2 pb-32">
+      <div className="max-w-5xl mx-auto space-y-2 pb-40 md:pb-32">
         {messages.map((message) => (
           <ChatMessage key={message.id} {...message} />
         ))}
