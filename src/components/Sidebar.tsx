@@ -15,12 +15,14 @@ import {
 
 interface SidebarProps {
   isCollapsed: boolean;
+  isNewChat: boolean;
   onToggle: () => void;
+  onNewChat: () => void;
   onLoadConversation?: (id: string) => void;
   refreshTrigger?: number;
 }
 
-export function Sidebar({ isCollapsed, onToggle, onLoadConversation, refreshTrigger }: SidebarProps) {
+export function Sidebar({ isCollapsed, isNewChat, onToggle, onNewChat, onLoadConversation, refreshTrigger }: SidebarProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -80,6 +82,8 @@ export function Sidebar({ isCollapsed, onToggle, onLoadConversation, refreshTrig
           <HistoryPanel 
             onLoadConversation={onLoadConversation || (() => {})} 
             refreshTrigger={refreshTrigger}
+            isNewChat={isNewChat}
+            onNewChat={onNewChat}
           />
         )}
       </ScrollArea>

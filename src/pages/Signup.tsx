@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,9 +91,9 @@ export default function Signup() {
         
         <p className="mt-4 text-center text-sm">
           Already have an account?{' '}
-          <a href="/login" className="text-primary hover:underline">
+          <Link to="/login" className="text-primary hover:underline">
             Log in
-          </a>
+          </Link>
         </p>
       </div>
     </div>

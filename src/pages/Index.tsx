@@ -326,7 +326,9 @@ const Index = () => {
       {/* Sidebar */}
       <Sidebar
         isCollapsed={sidebarCollapsed}
+        isNewChat={messages.length === 0}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onNewChat={startNewChat}
         onLoadConversation={loadConversation}
         refreshTrigger={refreshTrigger}
       />
