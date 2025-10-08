@@ -1,7 +1,6 @@
-import { Code2, FileCode, Sparkles, MoreVertical, LogOut, User } from "lucide-react";
+import { Code2, FileCode, MoreVertical, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { HistoryPanel } from "@/components/HistoryPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -77,34 +76,11 @@ export function Sidebar({ isCollapsed, onToggle, onLoadConversation, refreshTrig
 
       {/* Content */}
       <ScrollArea className="flex-1 px-2 py-4">
-        <div className="space-y-1">
-          <Button
-            variant="ghost"
-            className={`w-full ${isCollapsed ? "justify-center px-0" : "justify-start"}`}
-            title="Snippets"
-          >
-            <Sparkles className="h-4 w-4" />
-            {!isCollapsed && <span className="ml-2">Snippets</span>}
-          </Button>
-
-          <Button
-            variant="ghost"
-            className={`w-full ${isCollapsed ? "justify-center px-0" : "justify-start"}`}
-            title="History"
-          >
-            <FileCode className="h-4 w-4" />
-            {!isCollapsed && <span className="ml-2">History</span>}
-          </Button>
-        </div>
-
         {!isCollapsed && (
-          <>
-            <Separator className="my-4" />
-            <HistoryPanel 
-              onLoadConversation={onLoadConversation || (() => {})} 
-              refreshTrigger={refreshTrigger}
-            />
-          </>
+          <HistoryPanel 
+            onLoadConversation={onLoadConversation || (() => {})} 
+            refreshTrigger={refreshTrigger}
+          />
         )}
       </ScrollArea>
 
