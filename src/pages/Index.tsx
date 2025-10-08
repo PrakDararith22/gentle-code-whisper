@@ -97,7 +97,7 @@ const Index = () => {
   };
 
 
-  const saveToHistory = async (prompt: string, response: string) => {
+  const saveToHistory = async (prompt: string, response: string, allMessagesOverride?: Message[]) => {
     let conversationId = currentConversationId;
     
     // Create new conversation ID if this is the first message
@@ -112,7 +112,7 @@ const Index = () => {
       : prompt;
 
     // Build the complete message history including the latest exchange
-    const allMessages = [...messages];
+    const allMessages = allMessagesOverride ? [...allMessagesOverride] : [...messages];
     
     const historyItem = {
       id: conversationId,
@@ -304,7 +304,8 @@ const Index = () => {
         setMessages(prev => [...prev, aiMessage]);
         
         // Save to history
-        await saveToHistory(prompt, data.code);
+        await saveToHistory(prompt, data.code, [...messages, aiMessage]);
+        setRefreshTrigger(prev => prev + 1);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -318,6 +319,13 @@ const Index = () => {
         }),
       };
       setMessages(prev => [...prev, errorMessage]);
+      // Persist the conversation so it still shows up in history
+      try {
+        await saveToHistory(prompt, '', [...messages, errorMessage]);
+        setRefreshTrigger(prev => prev + 1);
+      } catch (e) {
+        console.error('Failed to save failed conversation to history:', e);
+      }
     } finally {
       setIsLoading(false);
     }
