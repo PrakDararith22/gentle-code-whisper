@@ -1,73 +1,90 @@
-# Welcome to your Lovable project
+# Gentle Code Whisper
 
-## Project info
+An AI-powered code generation assistant with a calm, intelligent interface.
 
-**URL**: https://lovable.dev/projects/218596a5-e9c2-40b7-8cd4-d7a47a44a305
+## 🚀 Tech Stack
 
-## How can I edit this code?
+- **Frontend**: Vite + React 18 + TypeScript
+- **UI**: Tailwind CSS + shadcn/ui components
+- **Backend**: Supabase (Database + Edge Functions)
+- **AI**: Google Gemini API
 
-There are several ways of editing your application.
+## 📋 Prerequisites
 
-**Use Lovable**
+- Node.js 18+ (recommended: use [nvm](https://github.com/nvm-sh/nvm))
+- Supabase account
+- Google Gemini API key
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/218596a5-e9c2-40b7-8cd4-d7a47a44a305) and start prompting.
+## 🛠️ Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+### 1. Install Dependencies
 
-**Use your preferred IDE**
+```bash
+npm install
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 2. Configure Environment Variables
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Create/update `.env` with your Supabase credentials:
 
-Follow these steps:
+```env
+VITE_SUPABASE_PROJECT_ID="your_project_id"
+VITE_SUPABASE_PUBLISHABLE_KEY="your_anon_key"
+VITE_SUPABASE_URL="https://your_project.supabase.co"
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 3. Set Up Database
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Run the SQL migration files in `supabase/migrations/` via Supabase Dashboard SQL Editor to create tables and storage buckets.
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 4. Deploy Edge Function
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Deploy the `generate` function to Supabase:
+
+```bash
+supabase functions deploy generate
+```
+
+Set the required environment variable in Supabase Dashboard:
+- `GEMINI_API_KEY` - Your Google Gemini API key
+
+### 5. Run Development Server
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open [http://localhost:8080](http://localhost:8080)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🎯 Features
 
-**Use GitHub Codespaces**
+- ✨ AI-powered code generation using Google Gemini
+- 📝 Clean, minimal interface
+- 💾 History tracking (stored in Supabase)
+- 🖼️ Image upload support for visual prompts
+- 📋 Copy generated code with one click
+- 🌓 Light/dark mode support
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📦 Project Structure
 
-## What technologies are used for this project?
+```
+├── src/
+│   ├── components/     # React components
+│   ├── pages/          # Page components
+│   ├── hooks/          # Custom React hooks
+│   └── lib/            # Utilities
+├── supabase/
+│   ├── functions/      # Edge functions
+│   └── migrations/     # Database migrations
+└── public/             # Static assets
+```
 
-This project is built with:
+## 🔑 API Keys
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Get your API keys:
+- **Gemini API**: [Google AI Studio](https://aistudio.google.com/app/apikey)
+- **Supabase**: [Supabase Dashboard](https://supabase.com/dashboard)
 
-## How can I deploy this project?
+## 📝 License
 
-Simply open [Lovable](https://lovable.dev/projects/218596a5-e9c2-40b7-8cd4-d7a47a44a305) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT
