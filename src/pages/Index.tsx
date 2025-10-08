@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { PromptInput } from "@/components/PromptInput";
 import { ChatThread } from "@/components/ChatThread";
 import { Button } from "@/components/ui/button";
-import { Plus, LogIn, LogOut, User } from "lucide-react";
+import { Plus, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -53,15 +53,6 @@ const Index = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      setMessages([]);
-      localStorage.removeItem('chat_messages');
-    } catch (error) {
-      console.error('Failed to sign out:', error);
-    }
-  };
 
   const loadConversation = async (id: string) => {
     if (!user) return;
@@ -210,23 +201,12 @@ const Index = () => {
             <div className="text-xs text-muted-foreground">
               {messages.length} {messages.length === 1 ? 'message' : 'messages'}
             </div>
-            <Button variant="outline" size="sm" onClick={startNewChat}>
+            <Button variant="default" size="sm" onClick={startNewChat}>
               <Plus className="h-4 w-4 mr-2" />
               New Chat
             </Button>
-            {user ? (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <User className="h-3 w-3" />
-                  {user.email}
-                </div>
-                <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </Button>
-              </div>
-            ) : (
-              <Button variant="default" size="sm" onClick={() => navigate('/login')}>
+            {!user && (
+              <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
                 <LogIn className="h-4 w-4 mr-2" />
                 Sign In
               </Button>

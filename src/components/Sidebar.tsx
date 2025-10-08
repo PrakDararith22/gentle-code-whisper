@@ -1,8 +1,18 @@
-import { Code2, FileCode, Sparkles, Settings } from "lucide-react";
+import { Code2, FileCode, Sparkles, MoreVertical, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { HistoryPanel } from "@/components/HistoryPanel";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -11,6 +21,31 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isCollapsed, onToggle, onLoadConversation }: SidebarProps) {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      localStorage.removeItem('chat_messages');
+      toast({
+        title: 'Signed out',
+        description: 'You have been signed out successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to sign out',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getInitials = (email: string) => {
+    return email.charAt(0).toUpperCase();
+  };
+
   return (
     <aside
       className={`
@@ -69,16 +104,68 @@ export function Sidebar({ isCollapsed, onToggle, onLoadConversation }: SidebarPr
         )}
       </ScrollArea>
 
-      {/* Footer */}
+      {/* Footer - Account Section */}
       <div className="p-2 border-t border-sidebar-border">
-        <Button
-          variant="ghost"
-          className={`w-full ${isCollapsed ? "justify-center px-0" : "justify-start"}`}
-          title="Settings"
-        >
-          <Settings className="h-4 w-4" />
-          {!isCollapsed && <span className="ml-2">Settings</span>}
-        </Button>
+        {user ? (
+          !isCollapsed ? (
+            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-sidebar-accent">
+              {/* Profile Picture Circle */}
+              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
+                {getInitials(user.email || 'U')}
+              </div>
+              
+              {/* Name & Email */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user.email?.split('@')[0]}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.email}
+                </p>
+              </div>
+              
+              {/* 3-dot Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem disabled>
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-full"
+              title={user.email}
+            >
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold">
+                {getInitials(user.email || 'U')}
+              </div>
+            </Button>
+          )
+        ) : (
+          <Button
+            variant="ghost"
+            className={`w-full ${isCollapsed ? "justify-center px-0" : "justify-start"}`}
+            onClick={() => navigate('/login')}
+          >
+            <User className="h-4 w-4" />
+            {!isCollapsed && <span className="ml-2">Sign In</span>}
+          </Button>
+        )}
       </div>
     </aside>
   );
