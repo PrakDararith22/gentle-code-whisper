@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { PromptInput } from "@/components/PromptInput";
 import { ChatThread } from "@/components/ChatThread";
 import { Button } from "@/components/ui/button";
-import { Plus, LogIn } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -205,12 +205,6 @@ const Index = () => {
               <Plus className="h-4 w-4 mr-2" />
               New Chat
             </Button>
-            {!user && (
-              <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign In
-              </Button>
-            )}
           </div>
         </header>
 
