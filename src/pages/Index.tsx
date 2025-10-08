@@ -1,24 +1,43 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { PromptInput } from "@/components/PromptInput";
-import { SnippetCard } from "@/components/SnippetCard";
-import { EmptyState } from "@/components/EmptyState";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChatThread } from "@/components/ChatThread";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
-interface Snippet {
+interface Message {
   id: string;
-  code: string;
-  language: string;
+  role: 'user' | 'assistant';
+  content: string;
   timestamp: string;
+  codeBlocks?: string[];
 }
 
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [snippets, setSnippets] = useState<Snippet[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const startNewChat = () => {
+    setMessages([]);
+  };
 
   const handlePromptSubmit = async (prompt: string) => {
+    // Add user message immediately
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: prompt,
+      timestamp: new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    setIsLoading(true);
+    
     try {
-      // Call backend edge function for code generation
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate`,
         {
@@ -31,38 +50,35 @@ const Index = () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to generate code");
-      }
-
       const data = await response.json();
 
       if (data.status === "success") {
-        const newSnippet: Snippet = {
-          id: Date.now().toString(),
-          code: data.code,
-          language: "JavaScript",
-          timestamp: new Date().toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'Here\'s the code:',
+          timestamp: new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
           }),
+          codeBlocks: [data.code],
         };
-
-        setSnippets((prev) => [newSnippet, ...prev]);
+        setMessages(prev => [...prev, aiMessage]);
       }
     } catch (error) {
-      console.error("Error generating code:", error);
-      // Fallback to show error message
-      const errorSnippet: Snippet = {
-        id: Date.now().toString(),
-        code: `// Error: Unable to generate code\n// ${error instanceof Error ? error.message : "Unknown error"}`,
-        language: "JavaScript",
-        timestamp: new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
+      console.error('Error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, something went wrong. Please try again.',
+        timestamp: new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
         }),
       };
-      setSnippets((prev) => [errorSnippet, ...prev]);
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -79,32 +95,21 @@ const Index = () => {
         {/* Top Header */}
         <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <h1 className="text-sm font-medium text-muted-foreground">
-            Workspace
+            Chat
           </h1>
-          <div className="text-xs text-muted-foreground">
-            {snippets.length} {snippets.length === 1 ? "snippet" : "snippets"}
+          <div className="flex items-center gap-4">
+            <div className="text-xs text-muted-foreground">
+              {messages.length} {messages.length === 1 ? 'message' : 'messages'}
+            </div>
+            <Button variant="outline" size="sm" onClick={startNewChat}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
           </div>
         </header>
 
-        {/* Content Area with Padding for Prompt Input */}
-        <ScrollArea className="flex-1 pb-32">
-          <div className="container max-w-4xl mx-auto px-6 py-8">
-            {snippets.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <div className="space-y-6">
-                {snippets.map((snippet) => (
-                  <SnippetCard
-                    key={snippet.id}
-                    code={snippet.code}
-                    language={snippet.language}
-                    timestamp={snippet.timestamp}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+        {/* Chat Thread */}
+        <ChatThread messages={messages} isLoading={isLoading} />
 
         {/* Floating Prompt Input */}
         <PromptInput onSubmit={handlePromptSubmit} />
