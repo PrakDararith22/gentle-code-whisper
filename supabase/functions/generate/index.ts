@@ -14,7 +14,24 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, userId, image } = await req.json();
+    const { prompt, image } = await req.json();
+    
+    // Extract user from JWT token
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    let userId = null;
+    
+    // Initialize Supabase client
+    // Supabase automatically provides these env vars in Edge Functions
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPA_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    if (token) {
+      const { data: { user } } = await supabase.auth.getUser(token);
+      userId = user?.id;
+    }
     
     console.log('Received request:', { prompt: prompt?.substring(0, 50), userId, hasImage: !!image });
 
@@ -25,12 +42,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Initialize Supabase client
-    // Supabase automatically provides these env vars in Edge Functions
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPA_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     let imageUrl: string | null = null;
 
